@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Kanban Task</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 2rem 1.75rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #a78bfa;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 1rem;
+      padding: 0.65rem 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #7c3aed;
+    }
+
+    .field { margin-bottom: 1.25rem; }
+
+    textarea { min-height: 120px; font-family: inherit; }
+
+    button[type="submit"] {
+      width: 100%;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button[type="submit"]:hover { background: #6d28d9; }
+    button[type="submit"]:active { background: #5b21b6; }
+
+    .banner {
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+    }
+    .banner.success { background: #14532d; border: 1px solid #16a34a; color: #bbf7d0; }
+    .banner.error   { background: #450a0a; border: 1px solid #dc2626; color: #fecaca; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>New Kanban Task</h1>
+
+    {% if success %}
+    <div class="banner success">
+      Task created{% if task_id %} (#{{ task_id }}){% endif %} and workspace started.
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="banner error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/submit">
+      {% if token %}
+      <input type="hidden" name="token" value="{{ token }}" />
+      {% endif %}
+
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" placeholder="Short task title" required autofocus />
+      </div>
+
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="What needs doing? Include any context…"></textarea>
+      </div>
+
+      <button type="submit">Create task &amp; start workspace</button>
+    </form>
+  </div>
+</body>
+</html>
