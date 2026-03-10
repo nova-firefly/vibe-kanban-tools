@@ -1,6 +1,6 @@
 # Vibe Kanban Tools
 
-A lightweight web app for creating Vibe Kanban tasks from any device (phone-friendly).
+A lightweight Next.js web app for creating Vibe Kanban tasks from any device (phone-friendly).
 
 ## Features
 
@@ -21,14 +21,13 @@ cp .env.example .env
 docker compose up --build
 ```
 
-App is available at `http://localhost:8000`.
+App is available at `http://localhost:3000`.
 
-### 3. Run locally (no Docker)
+### 3. Run locally
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+npm install
+npm run dev
 ```
 
 ## Optional access control
@@ -36,14 +35,14 @@ uvicorn app.main:app --reload
 Set `SUBMIT_TOKEN=some-secret` in `.env`, then share the URL with the token appended:
 
 ```
-http://your-host:8000/?token=some-secret
+http://your-host:3000/?token=some-secret
 ```
 
-The token is passed through the form invisibly so you stay authenticated.
+The token is passed invisibly with each submission.
 
 ## Vibe Kanban API
 
-`app/kanban.py` calls two endpoints:
+`src/app/api/submit/route.ts` calls two endpoints:
 
 | Action | Endpoint |
 |---|---|
@@ -54,6 +53,6 @@ Adjust these if your Vibe Kanban version exposes a different API surface.
 
 ## Extending
 
-- Add more fields (priority, labels, assignee) to the form + `kanban.py` payload
-- Add a `/api/submit` JSON endpoint for programmatic use (e.g. Shortcuts app on iPhone)
+- Add more fields (priority, labels, assignee) to the form + API route payload
+- Call the `/api/submit` JSON endpoint directly from iOS Shortcuts for fully native quick-capture
 - Add auth (OAuth, magic links) for multi-user deployments
