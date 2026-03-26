@@ -10,7 +10,29 @@ body {
   color: #e2e8f0;
   min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.tools-wrapper {
+  width: 100%;
+  max-width: 960px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 680px) {
+  body {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
 }

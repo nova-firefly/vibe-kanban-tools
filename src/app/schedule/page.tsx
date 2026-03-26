@@ -124,7 +124,7 @@ function ScheduleForm() {
       {/* Back nav */}
       <div style={styles.nav}>
         <Link href={backHref} style={styles.navLink}>
-          ← New issue
+          ← All tools
         </Link>
         <span style={styles.navActive}>Schedule prompt</span>
       </div>
