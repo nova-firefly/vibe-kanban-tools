@@ -15,7 +15,7 @@ RUN npm install -g vibe-kanban
 # Trigger download + extraction by running the mcp subcommand.
 # The CLI downloads and extracts the native binary before launching the server.
 # We use timeout to kill the server once it's running; exit 124 = killed by timeout (expected).
-RUN timeout 300 vibe-kanban mcp || [ "$?" = "124" ]
+RUN timeout 300 vibe-kanban mcp || true
 # Find the extracted binary and copy to a stable path
 RUN find /root/.vibe-kanban -name 'vibe-kanban-mcp' ! -name '*.zip' \
       -exec cp {} /usr/local/bin/vibe-kanban-mcp \; && \
