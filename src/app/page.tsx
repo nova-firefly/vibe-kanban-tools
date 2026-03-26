@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 interface Workspace {
   id: string;
   name?: string;
-  status?: string;
+  archived?: boolean;
 }
 
 interface ScheduledMessage {
@@ -22,14 +22,9 @@ interface ScheduledMessage {
 
 type Banner = { type: "success" | "error"; message: string } | null;
 
-// Workspaces with these statuses are considered inactive and hidden from the dropdown.
-const INACTIVE = new Set([
-  "archived", "merged", "stopped", "completed",
-  "closed", "cancelled", "canceled", "failed", "error",
-]);
-
+// The API already filters with archived: false, but guard here too.
 function isActiveWorkspace(ws: Workspace) {
-  return !ws.status || !INACTIVE.has(ws.status.toLowerCase());
+  return !ws.archived;
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -277,7 +272,6 @@ function ScheduleCard({ token }: { token: string }) {
               {activeWorkspaces.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name ?? w.id}
-                  {w.status ? ` · ${w.status}` : ""}
                 </option>
               ))}
             </select>

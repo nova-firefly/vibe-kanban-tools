@@ -16,12 +16,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await callTool("list_workspaces", {});
+    // Pass archived: false so vibe-kanban only returns active workspaces
+    const result = await callTool("list_workspaces", { archived: false });
     const text = extractText(result);
     const parsed = JSON.parse(text);
 
-    // Normalise to array — vibe-kanban may return { workspaces: [...] } or [...] directly
-    const workspaces: Array<{ id: string; name?: string; status?: string }> =
+    // Normalise to array — vibe-kanban returns { workspaces: [...], total_count, ... }
+    const workspaces: Array<{ id: string; name?: string; archived?: boolean }> =
       Array.isArray(parsed)
         ? parsed
         : Array.isArray(parsed?.workspaces)
