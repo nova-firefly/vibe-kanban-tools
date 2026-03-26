@@ -1,10 +1,38 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import fs from "fs";
 
-// Singleton MCP client — spawns vibe-kanban-mcp once and reuses the subprocess.
-// The binary connects to vibe-kanban at http://{HOST}:{VIBE_KANBAN_PORT}.
+// ─── Logger ──────────────────────────────────────────────────────────────────
+// Writes to stderr (visible in `docker compose logs`) and optionally to a file
+// set via MCP_LOG_FILE env var (e.g. /tmp/mcp-client.log).
+
+const LOG_FILE = process.env.MCP_LOG_FILE ?? null;
+
+function log(level: "INFO" | "WARN" | "ERROR", msg: string, extra?: unknown) {
+  const ts = new Date().toISOString();
+  const line =
+    extra !== undefined
+      ? `[mcp-client] ${ts} ${level} ${msg} ${JSON.stringify(extra)}`
+      : `[mcp-client] ${ts} ${level} ${msg}`;
+
+  process.stderr.write(line + "\n");
+
+  if (LOG_FILE) {
+    try {
+      fs.appendFileSync(LOG_FILE, line + "\n");
+    } catch {
+      // Non-fatal — don't let logging break the app
+    }
+  }
+}
+
+// ─── Singleton state ─────────────────────────────────────────────────────────
+
 let mcpClient: Client | null = null;
 let connecting: Promise<Client> | null = null;
+let reconnectCount = 0;
+
+// ─── Client factory ───────────────────────────────────────────────────────────
 
 async function createClient(): Promise<Client> {
   const mcpBinary =
@@ -12,32 +40,71 @@ async function createClient(): Promise<Client> {
   const host = process.env.VIBE_KANBAN_HOST ?? "localhost";
   const port = process.env.VIBE_KANBAN_PORT ?? "4000";
 
+  log("INFO", `Spawning MCP binary`, {
+    binary: mcpBinary,
+    host,
+    port,
+    attempt: reconnectCount + 1,
+    binaryExists: (() => {
+      try {
+        return fs.existsSync(mcpBinary);
+      } catch {
+        return "check-failed";
+      }
+    })(),
+  });
+
+  const childEnv = {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([, v]) => v !== undefined) as [
+        string,
+        string,
+      ][]
+    ),
+    HOST: host,
+    VIBE_KANBAN_PORT: port,
+  };
+
   const transport = new StdioClientTransport({
     command: mcpBinary,
     args: [],
-    env: {
-      ...Object.fromEntries(
-        Object.entries(process.env).filter(([, v]) => v !== undefined) as [
-          string,
-          string,
-        ][]
-      ),
-      HOST: host,
-      VIBE_KANBAN_PORT: port,
-    },
+    env: childEnv,
+  });
+
+  // Capture stderr from the MCP subprocess so binary startup errors are visible
+  transport.stderr?.on("data", (chunk: Buffer) => {
+    const text = chunk.toString().trimEnd();
+    if (text) log("WARN", `[mcp-binary stderr] ${text}`);
   });
 
   const client = new Client({ name: "vibe-kanban-tools", version: "1.0.0" });
 
   transport.onclose = () => {
-    // Clear singleton so the next call re-spawns the subprocess
+    reconnectCount += 1;
+    log("WARN", `MCP transport closed — will reconnect on next call`, {
+      reconnectCount,
+    });
     mcpClient = null;
     connecting = null;
   };
 
-  await client.connect(transport);
+  try {
+    await client.connect(transport);
+    log("INFO", "MCP client connected successfully");
+  } catch (err) {
+    log("ERROR", "Failed to connect MCP client", {
+      error: err instanceof Error ? err.message : String(err),
+      binary: mcpBinary,
+      host,
+      port,
+    });
+    throw err;
+  }
+
   return client;
 }
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function getMcpClient(): Promise<Client> {
   if (mcpClient) return mcpClient;
@@ -56,7 +123,28 @@ export async function callTool(
   name: string,
   args: Record<string, unknown>
 ): Promise<unknown> {
-  const client = await getMcpClient();
-  const result = await client.callTool({ name, arguments: args });
-  return result;
+  log("INFO", `callTool: ${name}`, args);
+
+  let client: Client;
+  try {
+    client = await getMcpClient();
+  } catch (err) {
+    log("ERROR", `getMcpClient failed for tool "${name}"`, {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
+
+  const start = Date.now();
+  try {
+    const result = await client.callTool({ name, arguments: args });
+    log("INFO", `callTool: ${name} completed`, { ms: Date.now() - start });
+    return result;
+  } catch (err) {
+    log("ERROR", `callTool: ${name} failed`, {
+      ms: Date.now() - start,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 }
