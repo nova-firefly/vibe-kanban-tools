@@ -11,16 +11,13 @@ RUN npm ci
 # copy the result out. The wrapper reads VIBE_KANBAN_MCP_BINARY_TAG if set.
 FROM base AS mcp-binary
 WORKDIR /app
-RUN npm install -g vibe-kanban 2>/dev/null || true
-# Trigger the download by importing the download helper directly
-RUN node -e " \
-  const {ensureBinary} = require('/usr/local/lib/node_modules/vibe-kanban/bin/download'); \
-  ensureBinary('vibe-kanban-mcp') \
-    .then(() => process.exit(0)) \
-    .catch(e => { console.error(e); process.exit(1); }); \
-"
-# Find the downloaded binary and copy to a stable path
-RUN find /root/.vibe-kanban -name 'vibe-kanban-mcp' -not -name '*.zip' \
+RUN npm install -g vibe-kanban
+# Trigger download + extraction by running the mcp subcommand.
+# The CLI downloads and extracts the native binary before launching the server.
+# We use timeout to kill the server once it's running; exit 124 = killed by timeout (expected).
+RUN timeout 300 vibe-kanban mcp || [ "$?" = "124" ]
+# Find the extracted binary and copy to a stable path
+RUN find /root/.vibe-kanban -name 'vibe-kanban-mcp' ! -name '*.zip' \
       -exec cp {} /usr/local/bin/vibe-kanban-mcp \; && \
     chmod +x /usr/local/bin/vibe-kanban-mcp
 
