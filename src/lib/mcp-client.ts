@@ -66,9 +66,12 @@ async function createClient(): Promise<Client> {
     VIBE_KANBAN_PORT: port,
   };
 
-  // Next.js sets PORT=3000 for its own server. Strip it so the MCP binary
-  // doesn't mistake it for the vibe-kanban port and use VIBE_KANBAN_PORT instead.
-  delete childEnv.PORT;
+  // The MCP binary uses HOST + PORT (not VIBE_KANBAN_PORT) to connect.
+  // Next.js sets PORT=3000 in its own env; override it with the vibe-kanban
+  // port so the binary reaches the right service instead of looping back to
+  // the Next.js server. Without PORT set the binary falls back to reading
+  // /tmp/vibe-kanban/vibe-kanban.port which doesn't exist in this container.
+  childEnv.PORT = port;
 
   const transport = new StdioClientTransport({
     command: mcpBinary,
