@@ -16,8 +16,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Pass archived: false so vibe-kanban only returns active workspaces
-    const result = await callTool("list_workspaces", { archived: false });
+    // Fetch all workspaces; client-side filter handles archived exclusion.
+    // Note: passing `archived: false` causes the MCP binary to fail with
+    // "error decoding response body", so we omit it and filter after.
+    const result = await callTool("list_workspaces", {});
     const text = extractText(result);
     const parsed = JSON.parse(text);
 

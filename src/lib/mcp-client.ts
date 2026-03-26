@@ -137,8 +137,20 @@ export async function callTool(
 
   const start = Date.now();
   try {
-    const result = await client.callTool({ name, arguments: args });
-    log("INFO", `callTool: ${name} completed`, { ms: Date.now() - start });
+    const result = await client.callTool({ name, arguments: args }) as {
+      isError?: boolean;
+      content?: Array<{ type: string; text?: string }>;
+    };
+
+    const ms = Date.now() - start;
+
+    if (result?.isError) {
+      const errText = result.content?.find((c) => c.type === "text")?.text ?? "(no error text)";
+      log("ERROR", `callTool: ${name} returned is_error=true`, { ms, body: errText });
+      throw new Error(`MCP tool "${name}" returned an error: ${errText}`);
+    }
+
+    log("INFO", `callTool: ${name} completed`, { ms });
     return result;
   } catch (err) {
     log("ERROR", `callTool: ${name} failed`, {
