@@ -31,7 +31,7 @@ function TaskForm() {
       } else {
         setStatus({
           type: "success",
-          message: `Task created${data.taskId ? ` (#${data.taskId})` : ""} and workspace started.`,
+          message: `Issue created${data.issueId ? ` (${data.issueId})` : ""}.`,
         });
         setTitle("");
         setDescription("");
@@ -45,7 +45,7 @@ function TaskForm() {
 
   return (
     <div style={styles.card}>
-      <h1 style={styles.heading}>New Kanban Task</h1>
+      <h1 style={styles.heading}>New Kanban Issue</h1>
 
       {status && (
         <div style={status.type === "success" ? styles.bannerSuccess : styles.bannerError}>
@@ -80,7 +80,7 @@ function TaskForm() {
         </div>
 
         <button type="submit" disabled={loading} style={styles.button}>
-          {loading ? "Creating…" : "Create task & start workspace"}
+          {loading ? "Creating…" : "Create issue"}
         </button>
       </form>
     </div>

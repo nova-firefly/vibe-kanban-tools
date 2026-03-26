@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "next": "15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

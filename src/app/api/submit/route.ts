@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { callTool } from "@/lib/mcp-client";
 
-const VIBE_KANBAN_URL = process.env.VIBE_KANBAN_URL ?? "http://localhost:3000";
-const VIBE_KANBAN_API_KEY = process.env.VIBE_KANBAN_API_KEY ?? "";
 const SUBMIT_TOKEN = process.env.SUBMIT_TOKEN ?? "";
 
-function kanbanHeaders() {
-  const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (VIBE_KANBAN_API_KEY) h["Authorization"] = `Bearer ${VIBE_KANBAN_API_KEY}`;
-  return h;
+function extractText(result: unknown): string {
+  const r = result as { content?: Array<{ type: string; text?: string }> };
+  const item = r?.content?.find((c) => c.type === "text");
+  if (!item?.text) throw new Error("No text content in MCP response");
+  return item.text;
 }
 
 export async function POST(req: NextRequest) {
@@ -22,34 +22,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 1. Create the task
-    const taskRes = await fetch(`${VIBE_KANBAN_URL}/api/tasks`, {
-      method: "POST",
-      headers: kanbanHeaders(),
-      body: JSON.stringify({ title, description }),
-    });
+    const issueArgs: Record<string, unknown> = { title: title.trim() };
+    if (description?.trim()) issueArgs.description = description.trim();
+    if (process.env.VIBE_KANBAN_PROJECT_ID)
+      issueArgs.project_id = process.env.VIBE_KANBAN_PROJECT_ID;
 
-    if (!taskRes.ok) {
-      const text = await taskRes.text();
-      throw new Error(`Vibe Kanban error (${taskRes.status}): ${text}`);
-    }
+    const issueResult = await callTool("create_issue", issueArgs);
+    const issueText = extractText(issueResult);
+    const issue = JSON.parse(issueText);
+    const issueId: string = issue?.id ?? issue?.issue?.id;
 
-    const task = await taskRes.json();
-    const taskId = task?.id ?? task?.task?.id;
-
-    // 2. Start a workspace for the task
-    const wsRes = await fetch(`${VIBE_KANBAN_URL}/api/tasks/${taskId}/attempts`, {
-      method: "POST",
-      headers: kanbanHeaders(),
-      body: JSON.stringify({}),
-    });
-
-    if (!wsRes.ok) {
-      const text = await wsRes.text();
-      throw new Error(`Workspace start error (${wsRes.status}): ${text}`);
-    }
-
-    return NextResponse.json({ taskId });
+    return NextResponse.json({ issueId });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 502 });
