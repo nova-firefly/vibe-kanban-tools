@@ -2,10 +2,14 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
+import Link from "next/link";
 
 function TaskForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const scheduleHref = token
+    ? `/schedule?token=${encodeURIComponent(token)}`
+    : "/schedule";
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -45,7 +49,12 @@ function TaskForm() {
 
   return (
     <div style={styles.card}>
-      <h1 style={styles.heading}>New Kanban Issue</h1>
+      <div style={styles.cardHeader}>
+        <h1 style={styles.heading}>New Kanban Issue</h1>
+        <Link href={scheduleHref} style={styles.scheduleLink}>
+          Schedule prompt →
+        </Link>
+      </div>
 
       {status && (
         <div style={status.type === "success" ? styles.bannerSuccess : styles.bannerError}>
@@ -104,11 +113,23 @@ const styles = {
     width: "100%",
     maxWidth: 480,
   } as React.CSSProperties,
+  cardHeader: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginBottom: "1.5rem",
+  } as React.CSSProperties,
   heading: {
     fontSize: "1.25rem",
     fontWeight: 600,
-    marginBottom: "1.5rem",
+    margin: 0,
     color: "#a78bfa",
+  } as React.CSSProperties,
+  scheduleLink: {
+    fontSize: "0.78rem",
+    color: "#7c3aed",
+    textDecoration: "none",
+    flexShrink: 0,
   } as React.CSSProperties,
   field: { marginBottom: "1.25rem" } as React.CSSProperties,
   label: {
