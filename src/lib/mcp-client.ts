@@ -43,7 +43,8 @@ async function createClient(): Promise<Client> {
   log("INFO", `Spawning MCP binary`, {
     binary: mcpBinary,
     host,
-    port,
+    vibeKanbanPort: port,
+    nextjsPort: process.env.PORT ?? "(not set)",
     attempt: reconnectCount + 1,
     binaryExists: (() => {
       try {
@@ -54,7 +55,7 @@ async function createClient(): Promise<Client> {
     })(),
   });
 
-  const childEnv = {
+  const childEnv: Record<string, string> = {
     ...Object.fromEntries(
       Object.entries(process.env).filter(([, v]) => v !== undefined) as [
         string,
@@ -64,6 +65,10 @@ async function createClient(): Promise<Client> {
     HOST: host,
     VIBE_KANBAN_PORT: port,
   };
+
+  // Next.js sets PORT=3000 for its own server. Strip it so the MCP binary
+  // doesn't mistake it for the vibe-kanban port and use VIBE_KANBAN_PORT instead.
+  delete childEnv.PORT;
 
   const transport = new StdioClientTransport({
     command: mcpBinary,
