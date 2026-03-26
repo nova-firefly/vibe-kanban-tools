@@ -53,5 +53,5 @@ jobs:
           username: ${{ secrets.NOVA_USER }}
           key: ${{ secrets.NOVA_SSH_KEY }}
           script: |
-            cd ~/nova-config
+            cd ${{ secrets.NOVA_CONFIG_PATH }}
             ./nova.sh update dev
