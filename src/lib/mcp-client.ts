@@ -37,7 +37,7 @@ let reconnectCount = 0;
 async function createClient(): Promise<Client> {
   const mcpBinary =
     process.env.VIBE_KANBAN_MCP_BINARY ?? "/usr/local/bin/vibe-kanban-mcp";
-  const host = process.env.VIBE_KANBAN_HOST ?? "localhost";
+  const host = process.env.VIBE_KANBAN_HOST ?? "vibe-kanban";
   const port = process.env.VIBE_KANBAN_PORT ?? "4000";
 
   log("INFO", `Spawning MCP binary`, {
